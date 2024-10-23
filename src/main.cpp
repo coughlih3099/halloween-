@@ -10,6 +10,7 @@
 #include <raylib.h>
 #include <cassert>
 #include "../include/main.hpp"
+#include "../include/entitysystem.hpp"
 
 
 void GameStartup();
@@ -79,8 +80,7 @@ void GameStartup() {
     for (int w = 0; w < WORLD_WIDTH; w++) {
         for (int h = 0; h < WORLD_HEIGHT; h++) {
             world[w][h] = (Tile) {
-                .position = (Vector2) { static_cast<float>(w),
-                                        static_cast<float>(h) },
+                .position = (Position) { w, h },
                 .type = static_cast<decltype(Tile::type)>
                 (GetRandomValue(Tile::DIRT, Tile::TREE))
             };

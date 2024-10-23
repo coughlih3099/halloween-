@@ -6,9 +6,9 @@
  * Checks whether position is within the bounds of the world
  * @param pos, current position to be checked
  */
-bool is_valid_position(Vector2 pos) {
-    return pos.x >= 0 && pos.x < WORLD_WIDTH &&
-           pos.y >= 0 && pos.y < WORLD_HEIGHT;
+bool is_valid_position(Position pos) {
+    return pos.x >= 0 && pos.x < GRID_WIDTH &&
+           pos.y >= 0 && pos.y < GRID_HEIGHT;
 }
 
 
@@ -32,10 +32,10 @@ void initialize(EntityData* data) {
  * Returns a new position based on the current position and direction to move
  * @param current_pos, entity's current position as a vector2
  * @param dir, direction enum value to move the entity in
- * @return new Vector2 location
+ * @return new Position location
  */
-Vector2 get_new_position(Vector2 current_pos, Direction dir) {
-    Vector2 new_pos;
+Position get_new_position(Position current_pos, Direction dir) {
+    Position new_pos;
     switch (dir) {
         case NORTH:
             new_pos = { current_pos.x, current_pos.y - 1 };
@@ -59,19 +59,29 @@ Vector2 get_new_position(Vector2 current_pos, Direction dir) {
 /**
  * Check to see if the tile pos has an occupant
  * @param data, EntityData struct
- * @param pos, the Vector2 position to check
+ * @param pos, the Position position to check
  */
-bool is_occupied(const EntityData& data, Vector2 pos) {
+bool is_occupied(const EntityData& data, Position pos) {
     return is_valid_position(pos) && data.grid[pos.x][pos.y].has_value();
 }
 
 
 /**
+ * Check to see if the tile is traversable
+ * @param data, EntityStruct reference
+ * @param pos, the position to check
+ */
+bool is_traversable(const EntityData& data, Position pos) {
+    return false;
+}
+
+
+/**
  * @param data, EntityData struct pointer
- * @param pos, Vector2 position for entity
+ * @param pos, Position position for entity
  * @return nullopt or entity index
  */
-std::optional<size_t> create_entity(EntityData* data, Vector2 pos) {
+std::optional<size_t> create_entity(EntityData* data, Position pos) {
     if (!is_valid_position(pos) || is_occupied(*data, pos)
         || data->dead_count ==0) {
         return std::nullopt;
@@ -90,4 +100,55 @@ std::optional<size_t> create_entity(EntityData* data, Vector2 pos) {
     data->grid[pos.x][pos.y] = entity_idx;
 
     return entity_idx;
+}
+
+
+/**
+ * Removes the entity from the alive array
+ * @param data, EntityData struct pointer
+ * @param entity_idx, the index of the entity to remove
+ */
+void kill_entity(EntityData* data, int entity_idx) {
+    for (int i = 0; i < data->alive_count; i++) {
+        if (data->alive_indices[i] == entity_idx) {
+            // Clear the position of the entity in the grid
+            Position pos = data->position[entity_idx];
+            data->grid[pos.x][pos.y] = std::nullopt;
+
+            // Remove the entity from the alive array
+            data->alive_indices[i] = data->alive_indices[data->alive_count - 1];
+            data->alive_count--;
+
+            // Add to the dead array
+            data->dead_indices[data->dead_count] = entity_idx;
+            data->dead_count++;
+        }
+    }
+}
+
+
+/**
+ * Moves the entity if the position is valid and unoccupied
+ * @param data, Entity data struct pointer
+ * @param entity_idx, index of the entity to move
+ * @param dir, the direction in which to move the entity
+ * @return bool, true if the entity moved, false otherwise
+ */
+bool move_entity(EntityData* data, int entity_idx, Direction dir) {
+    bool moved;
+    Position current = data->position[entity_idx];
+    Position new_pos = get_new_position(current, dir);
+
+    if (!is_valid_position(new_pos) || is_occupied(*data, new_pos)) {
+        moved = false;
+    } else {
+        // update grid
+        data->grid[current.x][current.y] = std::nullopt;
+        data->grid[new_pos.x][new_pos.y] = entity_idx;
+
+        // update position
+        data->position[entity_idx] = new_pos;
+        moved = true;
+    }
+    return moved;
 }

@@ -8,8 +8,8 @@
 #include <optional>
 
 
-#define TILE_WIDTH 16.0  // float value because vector2 are floats
-#define TILE_HEIGHT 16.0  // float value because vector2 are floats
+#define TILE_WIDTH 16
+#define TILE_HEIGHT 16
 #define WORLD_WIDTH 20
 #define WORLD_HEIGHT 20
 #define GRID_WIDTH WORLD_WIDTH
@@ -26,6 +26,14 @@ typedef enum Direction {
 } direction;
 
 
+typedef struct Position {
+    int x, y;
+    bool operator==(const Position& other) const {
+        return x == other.x && y == other.y;
+    }
+} Position;
+
+
 typedef enum {
     TEXTURE_TILEMAP
 } texture_asset;
@@ -37,8 +45,8 @@ typedef enum {
  * Holds tile information
  */
 typedef struct Tile {
-    Vector2 position;
-    enum {
+    Position position;
+    enum type {
         DIRT,
         GRASS,
         TREE,
@@ -77,10 +85,10 @@ typedef struct Equipment {
 
 
 typedef struct EntityData {
-    // Character component data
-    std::array<Vector2, MAX_ENTITIES> position;
-    std::array<Stats, MAX_ENTITIES> stats;
-    std::array<Equipment, MAX_ENTITIES> equipment;
+    // Entity component data
+    std::array<Position, MAX_ENTITIES> position;
+    std::array<std::optional<Stats>, MAX_ENTITIES> stats;
+    std::array<std::optional<Equipment>, MAX_ENTITIES> equipment;
 
     // Lifecycle management
     std::array<int, MAX_ENTITIES> alive_indices;
