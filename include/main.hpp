@@ -31,6 +31,10 @@ typedef struct Position {
     bool operator==(const Position& other) const {
         return x == other.x && y == other.y;
     }
+    // returns x1 * x2, y1 * y2
+    Position operator*(const Position& other) const {
+        return { x * other.x, y * other.y };
+    }
 } Position;
 
 
@@ -52,7 +56,10 @@ typedef struct Tile {
         TREE,
         STONE
     } type;
+    bool traversable;
 } Tile;
+
+
 
 
 typedef enum {
@@ -86,7 +93,7 @@ typedef struct Equipment {
 
 typedef struct EntityData {
     // Entity component data
-    std::array<Position, MAX_ENTITIES> position;
+    std::array<Position, MAX_ENTITIES> positions;
     std::array<std::optional<Stats>, MAX_ENTITIES> stats;
     std::array<std::optional<Equipment>, MAX_ENTITIES> equipment;
 

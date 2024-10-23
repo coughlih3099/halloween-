@@ -9,6 +9,7 @@
 
 #include <raylib.h>
 #include <cassert>
+#include <optional>
 #include "../include/main.hpp"
 #include "../include/entitysystem.hpp"
 
@@ -17,12 +18,12 @@ void GameStartup();
 void GameUpdate();
 void GameRender();
 void GameShutdown();
+void DrawTile(Position pos, int texture_index_x, int texture_index_y);
 
 // ------------------
 
 Texture2D textures[MAX_TEXTURES];
 
-// create array for storing map
 Tile world[WORLD_WIDTH][WORLD_HEIGHT];
 
 /////////////////////////////
@@ -34,6 +35,10 @@ const int WINDOW_HEIGHT = 720;
 
 // -----------------
 
+EntityData entities;
+
+// track the player between phases
+int player_idx = -1;
 
 int main() {
     // Init
@@ -71,7 +76,7 @@ int main() {
 void GameStartup() {
     // InitAudioDevice();
 
-    Image image = LoadImage("../assets/colored_packed.png");
+    Image image = LoadImage("./assets/colored_packed.png");
     textures[TEXTURE_TILEMAP] = LoadTextureFromImage(image);
     UnloadImage(image);
 
@@ -79,11 +84,127 @@ void GameStartup() {
     // Populate the world array with tiles
     for (int w = 0; w < WORLD_WIDTH; w++) {
         for (int h = 0; h < WORLD_HEIGHT; h++) {
+            // get random tile type
+            enum Tile::type random_type = static_cast<enum Tile::type>(
+                GetRandomValue(Tile::DIRT, Tile::TREE));
+
             world[w][h] = (Tile) {
                 .position = (Position) { w, h },
-                .type = static_cast<decltype(Tile::type)>
-                (GetRandomValue(Tile::DIRT, Tile::TREE))
+                .type = random_type,
+                .traversable = random_type == Tile::DIRT ? true : false
             };
         }
     }
+
+    EntitySystem::initialize(&entities);
+
+    Position initial_position_player = { 3, 3 };
+    // create the player
+    auto player = EntitySystem::create_entity(&entities, world,
+                                              initial_position_player);
+    player_idx = player.value();
+    int player_pos_x = entities.positions[player_idx].x;
+    int player_pos_y = entities.positions[player_idx].y;
+
+
+    // Init the camera
+    camera.target = (Vector2){ static_cast<float>(player_pos_x),
+                               static_cast<float>(player_pos_y) };
+    camera.offset = (Vector2){ static_cast<float>(WINDOW_WIDTH) / 2,
+                               static_cast<float>(WINDOW_HEIGHT) / 2 };
+    camera.zoom = 3.0f;
+}
+
+
+void DrawTile(Position pos, int texture_index_x, int texture_index_y) {
+    Rectangle source = {
+        static_cast<float>(texture_index_x * TILE_WIDTH),
+        static_cast<float>(texture_index_y * TILE_HEIGHT),
+        static_cast<float>(TILE_WIDTH),
+        static_cast<float>(TILE_HEIGHT)
+    };
+    Rectangle dest = {
+        static_cast<float>(pos.x),
+        static_cast<float>(pos.y),
+        static_cast<float>(TILE_HEIGHT),
+        static_cast<float>(TILE_HEIGHT)
+    };
+    Vector2 origin = { 0, 0 };
+    DrawTexturePro(textures[TEXTURE_TILEMAP], source, dest, origin, 0.0f,
+                   WHITE);
+}
+
+
+void GameUpdate() {
+    // Move the player on key press
+    switch (GetKeyPressed()) {
+        case KEY_UP:
+            EntitySystem::move_entity(&entities, world, player_idx, NORTH);
+            break;
+        case KEY_LEFT:
+            EntitySystem::move_entity(&entities, world, player_idx, EAST);
+            break;
+        case KEY_DOWN:
+            EntitySystem::move_entity(&entities, world, player_idx, SOUTH);
+            break;
+        case KEY_RIGHT:
+            EntitySystem::move_entity(&entities, world, player_idx, WEST);
+            break;
+    }
+
+    // follow the player with the camera
+    camera.target = (Vector2) {
+        static_cast<float>(entities.positions[player_idx].x * TILE_WIDTH),
+        static_cast<float>(entities.positions[player_idx].y * TILE_HEIGHT),
+    };
+}
+
+
+void GameRender() {
+    BeginMode2D(camera);
+
+    // Draw the map
+    Tile tile;
+    int texture_index_x;
+    int texture_index_y;
+    for (int w = 0; w < WORLD_WIDTH; w++) {
+        for (int h = 0; h < WORLD_HEIGHT; h++) {
+            tile = world[w][h];
+            switch (tile.type) {
+                case Tile::DIRT:
+                    texture_index_x = 2;
+                    texture_index_y = 0;
+                    break;
+                case Tile::GRASS:
+                    texture_index_x = 5;
+                    texture_index_y = 0;
+                    break;
+                case Tile::TREE:
+                    texture_index_x = 0;
+                    texture_index_y = 1;
+                    break;
+                case Tile::STONE:
+                    texture_index_x = 5;
+                    texture_index_y = 2;
+                    break;
+            }
+            Position pos = tile.position *
+                           (Position){ TILE_WIDTH, TILE_HEIGHT };
+            DrawTile(pos, texture_index_x, texture_index_y);
+        }
+    }
+    // Draw the player
+    DrawTile({static_cast<int>(camera.target.x),
+              static_cast<int>(camera.target.y)}, 26, 0);
+
+    EndMode2D();
+}
+
+
+void GameShutdown() {
+    for (int i = 0; i < MAX_TEXTURES; i++) {
+        UnloadTexture(textures[i]);
+    }
+
+    // CloseAudioDevice();
 }
