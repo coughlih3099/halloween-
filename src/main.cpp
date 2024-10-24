@@ -18,13 +18,19 @@ void GameStartup();
 void GameUpdate();
 void GameRender();
 void GameShutdown();
-void DrawTile(Position pos, int texture_index_x, int texture_index_y);
+void DrawTile(Position pos, Position to_draw);
 
 // ------------------
 
 Texture2D textures[MAX_TEXTURES];
 
 Tile world[WORLD_WIDTH][WORLD_HEIGHT];
+
+const Position sprite_player = { 26, 0 };
+const Position tile_dirt = { 2, 0 };
+const Position tile_grass = { 5, 0 };
+const Position tile_tree = { 0, 1 };
+const Position tile_stone = { 5, 2 };
 
 /////////////////////////////
 
@@ -134,10 +140,10 @@ void GameStartup() {
 }
 
 
-void DrawTile(Position pos, int texture_index_x, int texture_index_y) {
+void DrawTile(Position pos, Position to_draw) {
     Rectangle source = {
-        static_cast<float>(texture_index_x * TILE_WIDTH),
-        static_cast<float>(texture_index_y * TILE_HEIGHT),
+        static_cast<float>(to_draw.x * TILE_WIDTH),
+        static_cast<float>(to_draw.y * TILE_HEIGHT),
         static_cast<float>(TILE_WIDTH),
         static_cast<float>(TILE_HEIGHT)
     };
@@ -183,37 +189,32 @@ void GameRender() {
 
     // Draw the map
     Tile tile;
-    int texture_index_x;
-    int texture_index_y;
+    Position to_draw;
     for (int w = 0; w < WORLD_WIDTH; w++) {
         for (int h = 0; h < WORLD_HEIGHT; h++) {
             tile = world[w][h];
             switch (tile.type) {
                 case Tile::DIRT:
-                    texture_index_x = 2;
-                    texture_index_y = 0;
+                    to_draw = tile_dirt;
                     break;
                 case Tile::GRASS:
-                    texture_index_x = 5;
-                    texture_index_y = 0;
+                    to_draw = tile_grass;
                     break;
                 case Tile::TREE:
-                    texture_index_x = 0;
-                    texture_index_y = 1;
+                    to_draw = tile_tree;
                     break;
                 case Tile::STONE:
-                    texture_index_x = 5;
-                    texture_index_y = 2;
+                    to_draw = tile_stone;
                     break;
             }
             Position pos = tile.position *
                            (Position){ TILE_WIDTH, TILE_HEIGHT };
-            DrawTile(pos, texture_index_x, texture_index_y);
+            DrawTile(pos, to_draw);
         }
     }
     // Draw the player
     DrawTile({static_cast<int>(camera.target.x),
-              static_cast<int>(camera.target.y)}, 26, 0);
+              static_cast<int>(camera.target.y)}, sprite_player);
 
     EndMode2D();
 }
