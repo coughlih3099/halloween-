@@ -86,12 +86,13 @@ void GameStartup() {
         for (int h = 0; h < WORLD_HEIGHT; h++) {
             // get random tile type
             enum Tile::type random_type = static_cast<enum Tile::type>(
-                GetRandomValue(Tile::DIRT, Tile::TREE));
+                GetRandomValue(Tile::DIRT, Tile::STONE));
 
             world[w][h] = (Tile) {
                 .position = (Position) { w, h },
                 .type = random_type,
-                .traversable = random_type == Tile::DIRT ? true : false
+                .traversable = (random_type == Tile::DIRT ||
+                                random_type == Tile::GRASS) ? true : false
             };
         }
     }
@@ -99,20 +100,37 @@ void GameStartup() {
     EntitySystem::initialize(&entities);
 
     Position initial_position_player = { 3, 3 };
+
+    // overwrite the tile the player is supposed to spawn on with a guaranteed
+    // traversable tile
+    world[initial_position_player.x][initial_position_player.y].type = Tile::DIRT;
+    world[initial_position_player.x][initial_position_player.y].traversable = true;
+
     // create the player
     auto player = EntitySystem::create_entity(&entities, world,
                                               initial_position_player);
+    if (!player.has_value()) {
+        TraceLog(LOG_ERROR, "Failed to create player entity!");
+        TraceLog(LOG_ERROR, "World[%d][%d]: type=%d",
+                 initial_position_player.x, initial_position_player.y,
+                 world[initial_position_player.x][initial_position_player.y].type);
+        return;
+    }
     player_idx = player.value();
     int player_pos_x = entities.positions[player_idx].x;
     int player_pos_y = entities.positions[player_idx].y;
 
 
     // Init the camera
-    camera.target = (Vector2){ static_cast<float>(player_pos_x),
-                               static_cast<float>(player_pos_y) };
-    camera.offset = (Vector2){ static_cast<float>(WINDOW_WIDTH) / 2,
-                               static_cast<float>(WINDOW_HEIGHT) / 2 };
-    camera.zoom = 3.0f;
+    if (player_idx >= 0 && player_idx < MAX_ENTITIES) {
+        camera.target = (Vector2){ static_cast<float>(player_pos_x),
+                                   static_cast<float>(player_pos_y) };
+        camera.offset = (Vector2){ static_cast<float>(WINDOW_WIDTH) / 2,
+                                   static_cast<float>(WINDOW_HEIGHT) / 2 };
+        camera.zoom = 3.0f;
+    } else {
+        TraceLog(LOG_ERROR, "Invalid player index!");
+    }
 }
 
 

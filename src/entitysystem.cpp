@@ -4,6 +4,21 @@
 namespace EntitySystem {
 
 /**
+ * Initialize the arrays
+ */
+void initialize(EntityData* data) {
+    for (int i = 0; i < MAX_ENTITIES; i++) {
+        data->dead_indices[i] = i;
+        data->positions[i] = { 0, 0 };
+    }
+    // Clear the grid
+    for (auto& column : data->grid) {
+        column.fill(std::nullopt);
+    }
+}
+
+
+/**
  * Checks whether position is within the bounds of the world
  * @param pos, current position to be checked
  */
@@ -14,18 +29,30 @@ bool is_valid_position(Position pos) {
 
 
 /**
- * Initialize the arrays
+ * Check to see if the tile pos has an occupant
+ * @param data, EntityData struct
+ * @param pos, the Position position to check
  */
-void initialize(EntityData* data) {
-    for (int i = 0; i < MAX_ENTITIES; i++) {
-        data->dead_indices[i] = i;
-        data->positions[i] = { 0, 0 };
-    }
+bool is_occupied(const EntityData& data, Position pos) {
+    return is_valid_position(pos) && data.grid[pos.x][pos.y].has_value();
+}
 
-    // Clear the grid
-    for (auto& column : data->grid) {
-        column.fill(std::nullopt);
+
+/**
+ * calls is_valid_position and is_occupied to check if the position is valid
+ * within the data.grid, then looks through the tile map to check to see if
+ * the tile is traversable
+ * @param data, EntityStruct reference
+ * @param map, the map data to check
+ * @param pos, the position to check
+ * @return true if position is traversable, default return is false
+ */
+bool is_traversable(const EntityData& data, const Tile map[][WORLD_HEIGHT], Position pos) {
+    if (is_valid_position(pos) && !is_occupied(data, pos)) {
+        const Tile& tile = map[pos.x][pos.y];
+            return tile.traversable;
     }
+    return false;
 }
 
 
@@ -58,39 +85,15 @@ Position get_new_position(Position current_pos, Direction dir) {
 
 
 /**
- * Check to see if the tile pos has an occupant
- * @param data, EntityData struct
- * @param pos, the Position position to check
- */
-bool is_occupied(const EntityData& data, Position pos) {
-    return is_valid_position(pos) && data.grid[pos.x][pos.y].has_value();
-}
-
-
-/**
- * calls is_valid_position and is_occupied to check if the position is valid
- * within the data.grid, then looks through the tile map to check to see if
- * the tile is traversable
- * @param data, EntityStruct reference
- * @param map, the map data to check
- * @param pos, the position to check
- * @return true if position is traversable, default return is false
- */
-bool is_traversable(const EntityData& data, const Tile map[][WORLD_HEIGHT], Position pos) {
-    if (is_valid_position(pos) && !is_occupied(data, pos)) {
-        const Tile& tile = map[pos.x][pos.y];
-            return tile.traversable;
-    }
-    return false;
-}
-
-/**
  * @param data, EntityData struct pointer
  * @param pos, Position position for entity
  * @return nullopt or entity index
  */
 std::optional<int> create_entity(EntityData* data, const Tile map[][WORLD_HEIGHT], Position pos) {
-    if (data->dead_count ==0 || !(is_traversable(*data, map, pos))) {
+    TraceLog(LOG_INFO, "Attempting to create entity at position (%d, %d)",
+             pos.x, pos.y);
+
+    if (data->dead_count == 0 || !(is_traversable(*data, map, pos))) {
         return std::nullopt;
     }
 
@@ -106,6 +109,7 @@ std::optional<int> create_entity(EntityData* data, const Tile map[][WORLD_HEIGHT
     data->positions[entity_idx] = pos;
     data->grid[pos.x][pos.y] = entity_idx;
 
+    TraceLog(LOG_INFO, "successfully created entity with index %d", entity_idx);
     return entity_idx;
 }
 
@@ -146,10 +150,10 @@ bool move_entity(EntityData* data, const Tile map[][WORLD_HEIGHT], int entity_id
     bool moved;
     Position current = data->positions[entity_idx];
     Position new_pos = get_new_position(current, dir);
+    TraceLog(LOG_INFO, "Current: (%d, %d), New: (%d, %d)", current.x, current.y,
+             new_pos.x, new_pos.y);
 
-    if (!(is_traversable(*data, map, new_pos))) {
-        moved = false;
-    } else {
+    if (is_traversable(*data, map, new_pos)) {
         // update grid
         data->grid[current.x][current.y] = std::nullopt;
         data->grid[new_pos.x][new_pos.y] = entity_idx;
@@ -157,6 +161,8 @@ bool move_entity(EntityData* data, const Tile map[][WORLD_HEIGHT], int entity_id
         // update position
         data->positions[entity_idx] = new_pos;
         moved = true;
+    } else {
+        moved = false;
     }
     return moved;
 }
