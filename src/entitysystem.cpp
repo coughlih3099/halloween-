@@ -150,8 +150,6 @@ bool move_entity(EntityData* data, const Tile map[][WORLD_HEIGHT], int entity_id
     bool moved;
     Position current = data->positions[entity_idx];
     Position new_pos = get_new_position(current, dir);
-    TraceLog(LOG_INFO, "Current: (%d, %d), New: (%d, %d)", current.x, current.y,
-             new_pos.x, new_pos.y);
 
     if (is_traversable(*data, map, new_pos)) {
         // update grid

@@ -26,7 +26,7 @@ Texture2D textures[MAX_TEXTURES];
 
 Tile world[WORLD_WIDTH][WORLD_HEIGHT];
 
-const Position sprite_player = { 26, 0 };
+const Position sprite_player = { 29, 6 };
 const Position tile_dirt = { 2, 0 };
 const Position tile_grass = { 5, 0 };
 const Position tile_tree = { 0, 1 };
