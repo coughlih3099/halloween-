@@ -10,6 +10,7 @@
 #include <raylib.h>
 #include <cassert>
 #include <optional>
+#include <vector>
 #include "../include/main.hpp"
 #include "../include/entitysystem.hpp"
 
@@ -26,7 +27,10 @@ Texture2D textures[MAX_TEXTURES];
 
 Tile world[WORLD_WIDTH][WORLD_HEIGHT];
 
+const Position TILE_SIZE = { TILE_WIDTH, TILE_HEIGHT };
+
 const Position sprite_player = { 29, 6 };
+const Position sprite_enemy = { 31, 2 };
 const Position tile_dirt = { 2, 0 };
 const Position tile_grass = { 5, 0 };
 const Position tile_tree = { 0, 1 };
@@ -45,6 +49,9 @@ EntityData entities;
 
 // track the player between phases
 int player_idx = -1;
+
+// track enemies between phases
+std::vector<std::optional<int>>(enemy_handles);
 
 int main() {
     // Init
@@ -92,7 +99,7 @@ void GameStartup() {
         for (int h = 0; h < WORLD_HEIGHT; h++) {
             // get random tile type
             enum Tile::type random_type = static_cast<enum Tile::type>(
-                GetRandomValue(Tile::DIRT, Tile::STONE));
+                GetRandomValue(Tile::DIRT, Tile::TREE));
 
             world[w][h] = (Tile) {
                 .position = (Position) { w, h },
@@ -115,6 +122,16 @@ void GameStartup() {
     // create the player
     auto player = EntitySystem::create_entity(&entities, world,
                                               initial_position_player);
+    // create an amount of entities
+    while (entities.dead_count > 0) {
+        auto enemy_handle = EntitySystem::create_entity(&entities, world,
+                                (Position) { GetRandomValue(0, WORLD_WIDTH),
+                                             GetRandomValue(0, WORLD_HEIGHT) });
+        if (enemy_handle.has_value()) {
+            enemy_handles.push_back(enemy_handle);
+        }
+    }
+
     if (!player.has_value()) {
         TraceLog(LOG_ERROR, "Failed to create player entity!");
         TraceLog(LOG_ERROR, "World[%d][%d]: type=%d",
@@ -207,10 +224,12 @@ void GameRender() {
                     to_draw = tile_stone;
                     break;
             }
-            Position pos = tile.position *
-                           (Position){ TILE_WIDTH, TILE_HEIGHT };
+            Position pos = tile.position * TILE_SIZE;
             DrawTile(pos, to_draw);
         }
+    }
+    for (int i = 0; i < enemy_handles.size(); i++) {
+        DrawTile(entities.positions[i] * TILE_SIZE, sprite_enemy);
     }
     // Draw the player
     DrawTile({static_cast<int>(camera.target.x),
