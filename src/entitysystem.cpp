@@ -177,6 +177,13 @@ std::optional<int> get_entity_index(const EntityData& data, Position position) {
     return data.grid[position.x][position.y];
 }
 
+/**
+ * Attack an entity
+ * @param data, entity data struct pointer
+ * @param attacker_index, the index of the entity doing the attacking
+ * @param attack_direction, the direction in which the attacker is attacking
+ * @return damage done by the entity or nullopt
+ */
 std::optional<int> attack(EntityData* data, int attacker_index, Direction attack_direction) {
     std::optional<int> damage_done = std::nullopt;
     Position attacker_position = data->positions[attacker_index];

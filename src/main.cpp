@@ -240,6 +240,13 @@ void GameUpdate() {
         static_cast<float>(entities.positions[player_index].x * TILE_WIDTH),
         static_cast<float>(entities.positions[player_index].y * TILE_HEIGHT),
     };
+
+
+    for (auto enemy : enemy_handles) {
+    if (entities.stats[enemy.value()]->attributes["Health"] <= 0) {
+        EntitySystem::kill_entity(&entities, enemy.value());
+        }
+    }
 }
 
 
@@ -270,8 +277,9 @@ void GameRender() {
             DrawTile(position, to_draw);
         }
     }
-    for (int i = 0; i < enemy_handles.size(); i++) {
-        DrawTile(entities.positions[i] * TILE_SIZE, sprite_enemy);
+    for (int i = 0; i < entities.alive_count; i++) {
+        auto index = entities.alive_indices[i];
+        DrawTile(entities.positions[index] * TILE_SIZE, sprite_enemy);
     }
     // Draw the player
     DrawTile({static_cast<int>(camera.target.x),
