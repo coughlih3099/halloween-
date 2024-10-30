@@ -7,4 +7,4 @@
 - go to the install location, then w64devkit
 - double click w64devkit.exe
 - cd to halloweenpp folder
-- run: g++ -o game.exe src/*.cpp -Iinclude/*.hpp -lraylib -lgdi32 -lwinmm
+- run: g++ -o game.exe src/\*.cpp -Iinclude/\*.hpp -lraylib -lgdi32 -lwinmm
