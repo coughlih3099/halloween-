@@ -95,7 +95,7 @@ typedef struct EntityData {
     // Entity component data
     std::array<Position, MAX_ENTITIES> positions;
     std::array<std::optional<Stats>, MAX_ENTITIES> stats;
-    std::array<std::optional<Equipment>, MAX_ENTITIES> equipment;
+    // std::array<std::optional<Equipment>, MAX_ENTITIES> equipment;
 
     // Lifecycle management
     std::array<int, MAX_ENTITIES> alive_indices;

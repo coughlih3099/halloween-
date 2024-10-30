@@ -19,7 +19,7 @@ void GameStartup();
 void GameUpdate();
 void GameRender();
 void GameShutdown();
-void DrawTile(Position pos, Position to_draw);
+void DrawTile(Position position, Position to_draw);
 
 // ------------------
 
@@ -48,7 +48,7 @@ const int WINDOW_HEIGHT = 720;
 EntityData entities;
 
 // track the player between phases
-int player_idx = -1;
+int player_index = -1;
 
 // track enemies between phases
 std::vector<std::optional<int>>(enemy_handles);
@@ -112,16 +112,33 @@ void GameStartup() {
 
     EntitySystem::initialize(&entities);
 
-    Position initial_position_player = { 3, 3 };
+    // init player info
+    // TODO(coughlih3099): Change from hardcoded position
+    Position initial_player_position = { 3, 3 };
+    Stats initial_player_stats;
+    initial_player_stats.attributes["Health"] = 100;
+    initial_player_stats.attributes["Attack"] = 10;
+    initial_player_stats.attributes["Defense"] = 10;
 
     // overwrite the tile the player is supposed to spawn on with a guaranteed
     // traversable tile
-    world[initial_position_player.x][initial_position_player.y].type = Tile::DIRT;
-    world[initial_position_player.x][initial_position_player.y].traversable = true;
+    world[initial_player_position.x][initial_player_position.y].type = Tile::DIRT;
+    world[initial_player_position.x][initial_player_position.y].traversable = true;
+
 
     // create the player
     auto player = EntitySystem::create_entity(&entities, world,
-                                              initial_position_player);
+                                              initial_player_position);
+    if (player.has_value()) {
+        entities.stats[player.value()] = initial_player_stats;
+    }
+
+    // Other entities starting stats
+    Stats initial_enemy_stats;
+    initial_enemy_stats.attributes["Health"] = 100;
+    initial_enemy_stats.attributes["Attack"] = 10;
+    initial_enemy_stats.attributes["Defense"] = 10;
+
     // create an amount of entities
     while (entities.dead_count > 0) {
         auto enemy_handle = EntitySystem::create_entity(&entities, world,
@@ -129,23 +146,24 @@ void GameStartup() {
                                              GetRandomValue(0, WORLD_HEIGHT) });
         if (enemy_handle.has_value()) {
             enemy_handles.push_back(enemy_handle);
+            entities.stats[enemy_handle.value()] = initial_enemy_stats;
         }
     }
 
     if (!player.has_value()) {
         TraceLog(LOG_ERROR, "Failed to create player entity!");
         TraceLog(LOG_ERROR, "World[%d][%d]: type=%d",
-                 initial_position_player.x, initial_position_player.y,
-                 world[initial_position_player.x][initial_position_player.y].type);
+                 initial_player_position.x, initial_player_position.y,
+                 world[initial_player_position.x][initial_player_position.y].type);
         return;
     }
-    player_idx = player.value();
-    int player_pos_x = entities.positions[player_idx].x;
-    int player_pos_y = entities.positions[player_idx].y;
+    player_index = player.value();
+    int player_pos_x = entities.positions[player_index].x;
+    int player_pos_y = entities.positions[player_index].y;
 
 
     // Init the camera
-    if (player_idx >= 0 && player_idx < MAX_ENTITIES) {
+    if (player_index >= 0 && player_index < MAX_ENTITIES) {
         camera.target = (Vector2){ static_cast<float>(player_pos_x),
                                    static_cast<float>(player_pos_y) };
         camera.offset = (Vector2){ static_cast<float>(WINDOW_WIDTH) / 2,
@@ -157,7 +175,7 @@ void GameStartup() {
 }
 
 
-void DrawTile(Position pos, Position to_draw) {
+void DrawTile(Position position, Position to_draw) {
     Rectangle source = {
         static_cast<float>(to_draw.x * TILE_WIDTH),
         static_cast<float>(to_draw.y * TILE_HEIGHT),
@@ -165,8 +183,8 @@ void DrawTile(Position pos, Position to_draw) {
         static_cast<float>(TILE_HEIGHT)
     };
     Rectangle dest = {
-        static_cast<float>(pos.x),
-        static_cast<float>(pos.y),
+        static_cast<float>(position.x),
+        static_cast<float>(position.y),
         static_cast<float>(TILE_HEIGHT),
         static_cast<float>(TILE_HEIGHT)
     };
@@ -177,26 +195,50 @@ void DrawTile(Position pos, Position to_draw) {
 
 
 void GameUpdate() {
+    // Track if the player moved and which direction they tried to move
+    bool player_moved = false;
+    int key_pressed = KEY_NULL;
+    Direction direction;
     // Move the player on key press
-    switch (GetKeyPressed()) {
+    switch (key_pressed = GetKeyPressed()) {
         case KEY_UP:
-            EntitySystem::move_entity(&entities, world, player_idx, NORTH);
+            direction = NORTH;
+            player_moved = EntitySystem::move_entity(&entities, world,
+                                                     player_index, direction);
             break;
         case KEY_LEFT:
-            EntitySystem::move_entity(&entities, world, player_idx, EAST);
+            direction = EAST;
+            player_moved = EntitySystem::move_entity(&entities, world,
+                                                     player_index, direction);
             break;
         case KEY_DOWN:
-            EntitySystem::move_entity(&entities, world, player_idx, SOUTH);
+            direction = SOUTH;
+            player_moved = EntitySystem::move_entity(&entities, world,
+                                                     player_index, direction);
             break;
         case KEY_RIGHT:
-            EntitySystem::move_entity(&entities, world, player_idx, WEST);
+            direction = WEST;
+            player_moved = EntitySystem::move_entity(&entities, world,
+                                                     player_index, direction);
             break;
+    }
+
+    // if the player didn't move, try to attack
+    if (!player_moved && key_pressed != KEY_NULL) {
+        std::optional<int> damage_done = EntitySystem::attack(
+            &entities, player_index, direction);
+        if (damage_done.has_value()) {
+            entities.stats[player_index]->attributes["Damage"] =
+                damage_done.value();
+            TraceLog(LOG_INFO, "Damage: %d",
+                     entities.stats[player_index]->attributes["Damage"]);
+        }
     }
 
     // follow the player with the camera
     camera.target = (Vector2) {
-        static_cast<float>(entities.positions[player_idx].x * TILE_WIDTH),
-        static_cast<float>(entities.positions[player_idx].y * TILE_HEIGHT),
+        static_cast<float>(entities.positions[player_index].x * TILE_WIDTH),
+        static_cast<float>(entities.positions[player_index].y * TILE_HEIGHT),
     };
 }
 
@@ -224,8 +266,8 @@ void GameRender() {
                     to_draw = tile_stone;
                     break;
             }
-            Position pos = tile.position * TILE_SIZE;
-            DrawTile(pos, to_draw);
+            Position position = tile.position * TILE_SIZE;
+            DrawTile(position, to_draw);
         }
     }
     for (int i = 0; i < enemy_handles.size(); i++) {
