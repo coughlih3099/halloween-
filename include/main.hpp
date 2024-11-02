@@ -14,11 +14,12 @@
 #define WORLD_HEIGHT 20
 #define GRID_WIDTH WORLD_WIDTH
 #define GRID_HEIGHT WORLD_HEIGHT
-#define MAX_TEXTURES 1
+#define MAX_TEXTURES 2
 #define MAX_ENTITIES 5  // TODO(coughlih3099): adjust this value
 
 
 typedef enum Direction {
+    NONE,
     NORTH,
     EAST,
     SOUTH,
@@ -28,12 +29,17 @@ typedef enum Direction {
 
 typedef struct Position {
     int x, y;
+    // returns whether x1 == x2 && y1 == y2
     bool operator==(const Position& other) const {
         return x == other.x && y == other.y;
     }
     // returns x1 * x2, y1 * y2
     Position operator*(const Position& other) const {
         return { x * other.x, y * other.y };
+    }
+    // returns x1 - x2, y1 - y2
+    Position operator-(const Position& other) const {
+        return { x - other.x, y - other.y };
     }
 } Position;
 
@@ -58,8 +64,6 @@ typedef struct Tile {
     } type;
     bool traversable;
 } Tile;
-
-
 
 
 typedef enum {
