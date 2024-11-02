@@ -40,8 +40,8 @@ const Position tile_stone = { 5, 2 };
 
 Camera2D camera = { 0 };
 
-const int WINDOW_WIDTH = 1280;
-const int WINDOW_HEIGHT = 720;
+const int WINDOW_WIDTH = 1000;
+const int WINDOW_HEIGHT = 1000;
 
 // -----------------
 
@@ -116,7 +116,7 @@ void GameStartup() {
     // TODO(coughlih3099): Change from hardcoded position
     Position initial_player_position = { 3, 3 };
     Stats initial_player_stats;
-    initial_player_stats.attributes["Health"] = 100;
+    initial_player_stats.attributes["Health"] = 30;
     initial_player_stats.attributes["Attack"] = 10;
     initial_player_stats.attributes["Defense"] = 10;
 
@@ -135,7 +135,7 @@ void GameStartup() {
 
     // Other entities starting stats
     Stats initial_enemy_stats;
-    initial_enemy_stats.attributes["Health"] = 100;
+    initial_enemy_stats.attributes["Health"] = 30;
     initial_enemy_stats.attributes["Attack"] = 10;
     initial_enemy_stats.attributes["Defense"] = 10;
 
@@ -168,7 +168,7 @@ void GameStartup() {
                                    static_cast<float>(player_pos_y) };
         camera.offset = (Vector2){ static_cast<float>(WINDOW_WIDTH) / 2,
                                    static_cast<float>(WINDOW_HEIGHT) / 2 };
-        camera.zoom = 3.0f;
+        camera.zoom = 4.5f;
     } else {
         TraceLog(LOG_ERROR, "Invalid player index!");
     }
@@ -198,35 +198,36 @@ void GameUpdate() {
     // Track if the player moved and which direction they tried to move
     bool player_moved = false;
     int key_pressed = KEY_NULL;
-    Direction direction;
+    Direction move_direction = NONE;
     // Move the player on key press
     switch (key_pressed = GetKeyPressed()) {
         case KEY_UP:
-            direction = NORTH;
+            move_direction = NORTH;
             player_moved = EntitySystem::move_entity(&entities, world,
-                                                     player_index, direction);
+                                                     player_index, move_direction);
             break;
         case KEY_LEFT:
-            direction = EAST;
+            move_direction = EAST;
             player_moved = EntitySystem::move_entity(&entities, world,
-                                                     player_index, direction);
+                                                     player_index, move_direction);
             break;
         case KEY_DOWN:
-            direction = SOUTH;
+            move_direction = SOUTH;
             player_moved = EntitySystem::move_entity(&entities, world,
-                                                     player_index, direction);
+                                                     player_index, move_direction);
             break;
         case KEY_RIGHT:
-            direction = WEST;
+            move_direction = WEST;
             player_moved = EntitySystem::move_entity(&entities, world,
-                                                     player_index, direction);
+                                                     player_index, move_direction);
             break;
     }
 
     // if the player didn't move, try to attack
-    if (!player_moved && key_pressed != KEY_NULL) {
+    // should probably rework the attack function
+    if (!player_moved && key_pressed != KEY_NULL && move_direction != NONE) {
         std::optional<int> damage_done = EntitySystem::attack(
-            &entities, player_index, direction);
+            &entities, player_index, move_direction);
         if (damage_done.has_value()) {
             entities.stats[player_index]->attributes["Damage"] =
                 damage_done.value();
@@ -242,6 +243,7 @@ void GameUpdate() {
     };
 
 
+    // remove the enemy if it dies
     for (auto enemy : enemy_handles) {
     if (entities.stats[enemy.value()]->attributes["Health"] <= 0) {
         EntitySystem::kill_entity(&entities, enemy.value());
@@ -277,10 +279,14 @@ void GameRender() {
             DrawTile(position, to_draw);
         }
     }
-    for (int i = 0; i < entities.alive_count; i++) {
+
+    // Draw the enemies
+    for (int i = entities.alive_count - entities.dead_count; i > 0; i--) {
         auto index = entities.alive_indices[i];
         DrawTile(entities.positions[index] * TILE_SIZE, sprite_enemy);
     }
+
+
     // Draw the player
     DrawTile({static_cast<int>(camera.target.x),
               static_cast<int>(camera.target.y)}, sprite_player);
