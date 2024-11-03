@@ -29,18 +29,7 @@ Texture2D textures[MAX_TEXTURES];
 
 Tile world[WORLD_WIDTH][WORLD_HEIGHT];
 
-// const float viewport_top_edge = 48.0f;
-// const float viewport_left_edge = 320.0f;
-// const float viewport_right_edge = 960.0f;
-// const float viewport_bottom_edge = 480.0f;
-// const float viewport_width_middle = (viewport_right_edge - viewport_left_edge) / 2;
-// const float viewport_length_middle = (viewport_bottom_edge - viewport_top_edge) / 2;
-// const Vector2 VIEWPORT_MIDDLE = { viewport_width_middle + viewport_left_edge,
-//                                   viewport_top_edge  + viewport_length_middle };
-
 const Position TILE_SIZE = { TILE_WIDTH, TILE_HEIGHT };
-
-// viewport measurements 80, 110, 290, 110;
 
 const Position sprite_player = { 29, 6 };
 const Position sprite_enemy = { 31, 2 };
@@ -117,7 +106,7 @@ void GameStartup() {
         for (int h = 0; h < WORLD_HEIGHT; h++) {
             // get random tile type
             enum Tile::type random_type = static_cast<enum Tile::type>(
-                GetRandomValue(Tile::DIRT, Tile::TREE));
+                GetRandomValue(Tile::DIRT, Tile::GRASS));
 
             world[w][h] = (Tile) {
                 .position = (Position) { w, h },
@@ -223,7 +212,7 @@ void GameUpdate() {
                                                      player_index, move_direction);
             break;
         case KEY_LEFT:
-            move_direction = EAST;
+            move_direction = WEST;
             player_moved = EntitySystem::move_entity(&entities, world,
                                                      player_index, move_direction);
             break;
@@ -233,7 +222,7 @@ void GameUpdate() {
                                                      player_index, move_direction);
             break;
         case KEY_RIGHT:
-            move_direction = WEST;
+            move_direction = EAST;
             player_moved = EntitySystem::move_entity(&entities, world,
                                                      player_index, move_direction);
             break;

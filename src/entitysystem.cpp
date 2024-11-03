@@ -1,4 +1,5 @@
 #include <raylib.h>
+#include <cassert>
 #include "../include/main.hpp"
 
 namespace EntitySystem {
@@ -70,13 +71,13 @@ Position get_new_position(Position current_pos, Direction direction) {
         case NORTH:
             new_pos = { current_pos.x, current_pos.y - 1 };
             break;
-        case EAST:
+        case WEST:
             new_pos = { current_pos.x - 1, current_pos.y };
             break;
         case SOUTH:
             new_pos = { current_pos.x, current_pos.y + 1 };
             break;
-        case WEST:
+        case EAST:
             new_pos = { current_pos.x + 1, current_pos.y };
             break;
         default:
@@ -189,17 +190,21 @@ std::optional<int> attack(EntityData* data, int attacker_index, Direction attack
     Position attacker_position = data->positions[attacker_index];
     Position defender_position = get_new_position(
         attacker_position, attack_direction);
-    std::optional<int> defender_index = get_entity_index(*data, defender_position);
-    // Check if the defender exists and has a health stat
-    if (defender_index.has_value() &&
-        data->stats[defender_index.value()]->attributes["Health"] > 0) {
-    TraceLog(LOG_INFO, "Entity: %d at position: %d, %d made an attack against entity: %d at position %d, %d",
-             attacker_index, attacker_position.x, attacker_position.y,
-             defender_index, defender_position.x, defender_position.y);
-        // TODO(coughlih3099): Make a more complex damage calculation
-        // do damage calculation
-        damage_done = data->stats[attacker_index]->attributes["Attack"];
-        data->stats[defender_index.value()]->attributes["Health"] -= damage_done.value();
+    // if attack position is off the map, don't attack
+    if (defender_position.x >= 0 && defender_position.y >= 0) {
+        assert(defender_position.x >= 0 && "Defender position less than 0");
+        std::optional<int> defender_index = get_entity_index(*data, defender_position);
+        // Check if the defender exists and has a health stat
+        if (defender_index.has_value() &&
+            data->stats[defender_index.value()]->attributes["Health"] > 0) {
+        TraceLog(LOG_INFO, "Entity: %d at position: (%d, %d) made an attack against entity: %d at position (%d, %d)",
+                attacker_index, attacker_position.x, attacker_position.y,
+                defender_index, defender_position.x, defender_position.y);
+            // TODO(coughlih3099): Make a more complex damage calculation
+            // do damage calculation
+            damage_done = data->stats[attacker_index]->attributes["Attack"];
+            data->stats[defender_index.value()]->attributes["Health"] -= damage_done.value();
+        }
     }
     return damage_done;
 }
