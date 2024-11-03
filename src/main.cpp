@@ -106,7 +106,7 @@ void GameStartup() {
         for (int h = 0; h < WORLD_HEIGHT; h++) {
             // get random tile type
             enum Tile::type random_type = static_cast<enum Tile::type>(
-                GetRandomValue(Tile::DIRT, Tile::GRASS));
+                GetRandomValue(Tile::DIRT, Tile::TREE));
 
             world[w][h] = (Tile) {
                 .position = (Position) { w, h },

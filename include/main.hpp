@@ -15,7 +15,7 @@
 #define GRID_WIDTH WORLD_WIDTH
 #define GRID_HEIGHT WORLD_HEIGHT
 #define MAX_TEXTURES 2
-#define MAX_ENTITIES 5  // TODO(coughlih3099): adjust this value
+#define MAX_ENTITIES 15  // TODO(coughlih3099): adjust this value
 
 
 typedef enum Direction {
