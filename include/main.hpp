@@ -45,7 +45,8 @@ typedef struct Position {
 
 
 typedef enum {
-    TEXTURE_TILEMAP
+    TEXTURE_TILEMAP,
+    TEXTURE_UI
 } texture_asset;
 
 // Definitions for the Map

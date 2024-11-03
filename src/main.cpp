@@ -13,6 +13,7 @@
 #include <vector>
 #include "../include/main.hpp"
 #include "../include/entitysystem.hpp"
+#include "../include/ui.hpp"
 
 
 void GameStartup();
@@ -20,6 +21,7 @@ void GameUpdate();
 void GameRender();
 void GameShutdown();
 void DrawTile(Position position, Position to_draw);
+
 
 // ------------------
 
@@ -39,9 +41,10 @@ const Position tile_stone = { 5, 2 };
 /////////////////////////////
 
 Camera2D camera = { 0 };
+Vector2 camera_target;
 
-const int WINDOW_WIDTH = 1000;
-const int WINDOW_HEIGHT = 1000;
+const int WINDOW_WIDTH = 1280;
+const int WINDOW_HEIGHT = 720;
 
 // -----------------
 
@@ -93,6 +96,10 @@ void GameStartup() {
     textures[TEXTURE_TILEMAP] = LoadTextureFromImage(image);
     UnloadImage(image);
 
+    Image ui_image = LoadImage("./assets/partui.png");
+    textures[TEXTURE_UI] = LoadTextureFromImage(ui_image);
+    UnloadImage(ui_image);
+
 
     // Populate the world array with tiles
     for (int w = 0; w < WORLD_WIDTH; w++) {
@@ -120,6 +127,7 @@ void GameStartup() {
     initial_player_stats.attributes["Attack"] = 10;
     initial_player_stats.attributes["Defense"] = 10;
 
+    // TODO(coughlih3099): Change from hardcoded position
     // overwrite the tile the player is supposed to spawn on with a guaranteed
     // traversable tile
     world[initial_player_position.x][initial_player_position.y].type = Tile::DIRT;
@@ -157,17 +165,14 @@ void GameStartup() {
                  world[initial_player_position.x][initial_player_position.y].type);
         return;
     }
-    player_index = player.value();
-    int player_pos_x = entities.positions[player_index].x;
-    int player_pos_y = entities.positions[player_index].y;
 
+    player_index = player.value();
 
     // Init the camera
     if (player_index >= 0 && player_index < MAX_ENTITIES) {
-        camera.target = (Vector2){ static_cast<float>(player_pos_x),
-                                   static_cast<float>(player_pos_y) };
-        camera.offset = (Vector2){ static_cast<float>(WINDOW_WIDTH) / 2,
-                                   static_cast<float>(WINDOW_HEIGHT) / 2 };
+        camera.target = UI::get_clamped_camera(
+                                            entities.positions[player_index]);
+        camera.offset = VIEWPORT_MIDDLE;
         camera.zoom = 4.5f;
     } else {
         TraceLog(LOG_ERROR, "Invalid player index!");
@@ -236,12 +241,9 @@ void GameUpdate() {
         }
     }
 
-    // follow the player with the camera
-    camera.target = (Vector2) {
-        static_cast<float>(entities.positions[player_index].x * TILE_WIDTH),
-        static_cast<float>(entities.positions[player_index].y * TILE_HEIGHT),
-    };
-
+    // move the camera to the updated player position, respecting viewport
+    // boundaries
+    camera.target = UI::get_clamped_camera(entities.positions[player_index]);
 
     // remove the enemy if it dies
     for (auto enemy : enemy_handles) {
@@ -281,17 +283,18 @@ void GameRender() {
     }
 
     // Draw the enemies
-    for (int i = entities.alive_count - entities.dead_count; i > 0; i--) {
+    for (int i = entities.alive_count - 1; i > 0; i--) {
         auto index = entities.alive_indices[i];
         DrawTile(entities.positions[index] * TILE_SIZE, sprite_enemy);
     }
 
-
     // Draw the player
-    DrawTile({static_cast<int>(camera.target.x),
-              static_cast<int>(camera.target.y)}, sprite_player);
+    DrawTile(entities.positions[player_index] * TILE_SIZE, sprite_player);
 
     EndMode2D();
+
+    // Draw the UI texture
+    DrawTexture(textures[TEXTURE_UI], 0, 0, WHITE);
 }
 
 
