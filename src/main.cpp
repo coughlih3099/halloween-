@@ -29,7 +29,18 @@ Texture2D textures[MAX_TEXTURES];
 
 Tile world[WORLD_WIDTH][WORLD_HEIGHT];
 
+// const float viewport_top_edge = 48.0f;
+// const float viewport_left_edge = 320.0f;
+// const float viewport_right_edge = 960.0f;
+// const float viewport_bottom_edge = 480.0f;
+// const float viewport_width_middle = (viewport_right_edge - viewport_left_edge) / 2;
+// const float viewport_length_middle = (viewport_bottom_edge - viewport_top_edge) / 2;
+// const Vector2 VIEWPORT_MIDDLE = { viewport_width_middle + viewport_left_edge,
+//                                   viewport_top_edge  + viewport_length_middle };
+
 const Position TILE_SIZE = { TILE_WIDTH, TILE_HEIGHT };
+
+// viewport measurements 80, 110, 290, 110;
 
 const Position sprite_player = { 29, 6 };
 const Position sprite_enemy = { 31, 2 };
@@ -172,7 +183,7 @@ void GameStartup() {
     if (player_index >= 0 && player_index < MAX_ENTITIES) {
         camera.target = UI::get_clamped_camera(
                                             entities.positions[player_index]);
-        camera.offset = VIEWPORT_MIDDLE;
+        camera.offset = UI::get_viewport_offset();
         camera.zoom = 4.5f;
     } else {
         TraceLog(LOG_ERROR, "Invalid player index!");
