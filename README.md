@@ -1,6 +1,6 @@
 ## How to compile on Linux
 - cd to halloweenpp folder
-- run: clang++ -std=c++17 -o game src/*.cpp -I./include -lraylib -lGL -lm -lpthread -ldl -lrt -lX11
+- run: clang++ -std=c++17 -o game.out src/*.cpp -I./include -lraylib -lGL -lm -lpthread -ldl -lrt -lX11
 
 ## How to compile on Windows
 - install raylib

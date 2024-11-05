@@ -42,7 +42,6 @@ void fill_noise_grid(Grid* noise_grid, int density, unsigned int seed = std::ran
  * Run n number of iterations through the grid to evolve it
  * @param noise_grid, pointer to noise_grid struct
  * @param iteration, number of iterations to run
- * @param interactive, if true, ask to continue after each iteration, else run through all iterations
  */
 void evolve_grid(Grid* grid, unsigned int iterations);
 

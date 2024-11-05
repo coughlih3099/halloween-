@@ -14,7 +14,9 @@
 #include "../include/main.hpp"
 #include "../include/entitysystem.hpp"
 #include "../include/ui.hpp"
+#include "../include/cellularautomaton.hpp"
 
+namespace CA = CellularAutomaton;
 
 void GameStartup();
 void GameUpdate();
@@ -101,18 +103,29 @@ void GameStartup() {
     UnloadImage(ui_image);
 
 
+    // generate a map using cellularautomaton
+    CA::Grid cell_map = CA::create_grid(WORLD_HEIGHT, WORLD_WIDTH);
+    const int wall_density = 60;
+    CA::fill_noise_grid(&cell_map, wall_density);
+    // evolve the map
+    const int iterations = 3;
+    CA::evolve_grid(&cell_map, iterations);
+
+
     // Populate the world array with tiles
     for (int w = 0; w < WORLD_WIDTH; w++) {
         for (int h = 0; h < WORLD_HEIGHT; h++) {
-            // get random tile type
+            // Choose dirt or grass for non-tree tile
             enum Tile::type random_type = static_cast<enum Tile::type>(
-                GetRandomValue(Tile::DIRT, Tile::TREE));
+                GetRandomValue(Tile::DIRT, Tile::GRASS));
 
             world[w][h] = (Tile) {
                 .position = (Position) { w, h },
-                .type = random_type,
-                .traversable = (random_type == Tile::DIRT ||
-                                random_type == Tile::GRASS) ? true : false
+                // if the cell_map position is a floor, make it dirt or grass
+                .type = (cell_map.cells[w][h].Type == CA::Cell::FLOOR) ?
+                         random_type : Tile::TREE,
+                .traversable = (cell_map.cells[w][h].Type == CA::Cell::FLOOR) ?
+                                true : false
             };
         }
     }
