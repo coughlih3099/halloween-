@@ -9,8 +9,10 @@ namespace UI {
 // hopefully they work forever
 const float viewport_top_edge = 48.0f;
 const float viewport_left_edge = 74.0f;
-const float viewport_right_edge = 238.0f;
-const float viewport_bottom_edge = 272.0f;
+const float viewport_right_edge = (WORLD_WIDTH * TILE_WIDTH) - (TILE_HEIGHT * 5) - 1;
+const float viewport_bottom_edge = (WORLD_HEIGHT * TILE_HEIGHT) - (TILE_HEIGHT * 3);
+//const float viewport_right_edge = 238.0f;
+//const float viewport_bottom_edge = 272.0f;
 
 Vector2 get_clamped_camera(Position player_position) {
     Vector2 clamped_position;

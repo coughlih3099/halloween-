@@ -11,6 +11,7 @@
 #include <cassert>
 #include <optional>
 #include <vector>
+#include <string>
 #include "../include/main.hpp"
 #include "../include/entitysystem.hpp"
 #include "../include/ui.hpp"
@@ -308,6 +309,10 @@ void GameRender() {
 
     // Draw the UI texture
     DrawTexture(textures[TEXTURE_UI], 0, 0, WHITE);
+
+    std::string verb = (entities.alive_count > 1) ? "are" : "is";
+    DrawText(TextFormat("There %s %d enemies left!", verb.c_str(), entities.alive_count - 1),
+            368, 544, 20, BLACK);
 }
 
 
