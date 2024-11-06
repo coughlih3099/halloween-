@@ -1,3 +1,6 @@
+# How to play
+You can walk using the arrow keys, and bumping into the enemies 3 times will kill them.
+
 ## How to compile on Linux
 - cd to halloweenpp folder
 - run: clang++ -std=c++17 -o game.out src/*.cpp -I./include -lraylib -lGL -lm -lpthread -ldl -lrt -lX11
